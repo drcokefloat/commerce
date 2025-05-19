@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth import get_user_model
 from django.db import models
 
 class User(AbstractUser):
@@ -16,9 +17,10 @@ class Listing(models.Model):
     starting_bid = models.DecimalField(max_digits=10, decimal_places=2)
     image_url = models.URLField(blank=True, null=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True, related_name="listings")
-    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="listings")
     active = models.BooleanField(default=True)
     watchlist = models.ManyToManyField(User, blank=True, related_name="watchlist")
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="listings")
+
 
     def __str__(self):
         return self.title

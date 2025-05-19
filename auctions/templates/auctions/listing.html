@@ -1,0 +1,14 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+  <h2>{{ listing.title }}</h2>
+  <p><strong>Description:</strong> {{ listing.description }}</p>
+  <p><strong>Current Price:</strong> ${{ listing.starting_bid }}</p>
+  {% if listing.image_url %}
+    <img src="{{ listing.image_url }}" alt="{{ listing.title }}" style="max-width:300px;">
+  {% endif %}
+  <p><strong>Category:</strong> {{ listing.category }}</p>
+  <p><strong>Owner:</strong> {{ listing.owner.username }}</p>
+  <!-- Add more features here later: bidding, comments, watchlist, etc. -->
+  <a href="{% url 'index' %}">Back to Listings</a>
+{% endblock %}
