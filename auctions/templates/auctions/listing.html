@@ -3,7 +3,7 @@
 {% block body %}
   <h2>{{ listing.title }}</h2>
   <p><strong>Description:</strong> {{ listing.description }}</p>
-  <p><strong>Current Price:</strong> ${{ listing.starting_bid }}</p>
+  <p><strong>Current Price:</strong> ${{ current_bid.amount }}</p>
   {% if listing.image_url %}
     <img src="{{ listing.image_url }}" alt="{{ listing.title }}" style="max-width:300px;">
   {% endif %}
@@ -11,4 +11,49 @@
   <p><strong>Owner:</strong> {{ listing.owner.username }}</p>
   <!-- Add more features here later: bidding, comments, watchlist, etc. -->
   <a href="{% url 'index' %}">Back to Listings</a>
+
+  {% if user.is_authenticated %}
+  <h3>Place a Bid</h3>
+  <form method="post">
+    {% csrf_token %}
+    {{ bid_form.as_p }}
+    <button type="submit" class="btn btn-success">Bid</button>
+  </form>
+{% endif %}
+{% if current_bid %}
+  <p><strong>Current Highest Bid:</strong> ${{ current_bid.amount }}</p>
+{% else %}
+  <p><strong>No bids yet. Starting bid:</strong> ${{ listing.starting_bid }}</p>
+{% endif %}
+
+<h3>Comments</h3>
+<ul>
+  {% for comment in comments %}
+    <li><strong>{{ comment.author.username }}</strong> ({{ comment.timestamp|date:"Y-m-d H:i" }}): {{ comment.content }}</li>
+  {% empty %}
+    <li>No comments yet.</li>
+  {% endfor %}
+</ul>
+
+{% if user.is_authenticated %}
+  <form method="post">
+    {% csrf_token %}
+    {{ comment_form.as_p }}
+    <button type="submit" class="btn btn-primary">Add Comment</button>
+  </form>
+{% endif %}
+
+{% if user.is_authenticated %}
+  {% if user in listing.watchlist.all %}
+    <form action="{% url 'remove_watchlist' listing.id %}" method="post" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-warning">Remove from Watchlist</button>
+    </form>
+  {% else %}
+    <form action="{% url 'add_watchlist' listing.id %}" method="post" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary">Add to Watchlist</button>
+    </form>
+  {% endif %}
+{% endif %}
 {% endblock %}

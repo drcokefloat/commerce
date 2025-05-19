@@ -3,13 +3,16 @@
 {% block body %}
     <h2>Active Listings</h2>
     <div>
-    {% for listing in listings %}
+    {% for item in listings_with_bids %}
       <div class="listing">
-        <h3><a href="{% url 'listing' listing.id %}">{{ listing.title }}</a></h3>
-        <p>{{ listing.description }}</p>
-        <p>Current Price: ${{ listing.starting_bid }}</p>
-        {% if listing.image_url %}
-          <img src="{{ listing.image_url }}" alt="{{ listing.title }}" style="max-width:200px;">
+        <h3><a href="{% url 'listing' item.listing.id %}">{{ item.listing.title }}</a></h3>
+        <p>{{ item.listing.description }}</p>
+        <p>
+          Current Price: $
+          {{ item.current_bid.amount|default:item.listing.starting_bid }}
+        </p>
+        {% if item.listing.image_url %}
+          <img src="{{ item.listing.image_url }}" alt="{{ item.listing.title }}" style="max-width:200px;">
         {% endif %}
       </div>
       <hr>

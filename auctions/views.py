@@ -1,4 +1,6 @@
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
@@ -7,13 +9,22 @@ from django.urls import reverse
 from django import forms
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .models import User, Listing, Category
+from .models import User, Listing, Category, Bid, Comment
+
+from decimal import Decimal
 
 
 def index(request):
     listings = Listing.objects.filter(active=True)
+    listings_with_bids = []
+    for listing in listings:
+        current_bid = listing.bids.order_by('-amount').first()
+        listings_with_bids.append({
+            "listing": listing,
+            "current_bid": current_bid
+        })
     return render(request, "auctions/index.html", {
-        "listings": listings
+        "listings_with_bids": listings_with_bids
     })
 
 
@@ -99,6 +110,68 @@ def create_listing(request):
 
 def listing(request, listing_id):
     listing = Listing.objects.get(pk=listing_id)
+    current_bid = listing.bids.order_by('-amount').first()
+    bid_form = BidForm()
+    comment_form = CommentForm()
+
+    if request.method == "POST":
+        if "amount" in request.POST:
+            bid_form = BidForm(request.POST)
+            if bid_form.is_valid():
+                amount = bid_form.cleaned_data["amount"]
+                min_bid = listing.starting_bid
+                if current_bid:
+                    min_bid = max(min_bid, current_bid.amount + Decimal(0.01))
+                if amount >= min_bid:
+                    Bid.objects.create(user=request.user, listing=listing, amount=amount)
+                    return redirect("listing", listing_id=listing.id)
+                else:
+                    bid_form.add_error("amount", f"Bid must be at least ${min_bid:.2f}")
+        elif "content" in request.POST:
+            comment_form = CommentForm(request.POST)
+            if comment_form.is_valid():
+                Comment.objects.create(
+                    listing=listing,
+                    author=request.user,
+                    content=comment_form.cleaned_data["content"]
+                )
+                return redirect("listing", listing_id=listing.id)
+
+    comments = listing.comments.order_by('-timestamp')
     return render(request, "auctions/listing.html", {
-        "listing": listing
+        "listing": listing,
+        "current_bid": current_bid,
+        "bid_form": bid_form,
+        "comment_form": comment_form,
+        "comments": comments
+    })
+
+
+class BidForm(forms.Form):
+    amount = forms.DecimalField(decimal_places=2, max_digits=10, label="Your Bid")
+
+
+class CommentForm(forms.Form):
+    content = forms.CharField(widget=forms.Textarea(attrs={'rows': 2}), label="Add a comment")
+
+
+@login_required
+def add_watchlist(request, listing_id):
+    listing = get_object_or_404(Listing, pk=listing_id)
+    listing.watchlist.add(request.user)
+    return redirect("listing", listing_id=listing_id)
+
+
+@login_required
+def remove_watchlist(request, listing_id):
+    listing = get_object_or_404(Listing, pk=listing_id)
+    listing.watchlist.remove(request.user)
+    return redirect("listing", listing_id=listing_id)
+
+
+@login_required
+def watchlist(request):
+    listings=request.user.watchlist.all()
+    return render(request, "auctions/watchlist.html", {
+        "listings": listings
     })

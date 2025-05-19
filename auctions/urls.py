@@ -7,5 +7,8 @@ urlpatterns = [
     path("logout", views.logout_view, name="logout"),
     path("register", views.register, name="register"),
     path("listing/<int:listing_id>/", views.listing, name="listing"),
-    path("create/", views.create_listing, name="create_listing"),  # <-- Add this line
+    path("create/", views.create_listing, name="create_listing"),
+    path("watchlist/", views.watchlist, name="watchlist"),
+    path("listing/<int:listing_id>/add_watchlist/", views.add_watchlist, name="add_watchlist"),
+    path("listing/<int:listing_id>/remove_watchlist/", views.remove_watchlist, name="remove_watchlist"),
 ]
